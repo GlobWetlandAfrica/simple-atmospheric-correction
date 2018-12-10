@@ -40,8 +40,6 @@ from atmProcessing import atmProcessingMain, saveImgByCopy
 
 class AtmosphericCorrectionAlgorithm(GeoAlgorithm):
 
-    SATELLITE = 'SATELLITE'
-    SATELLITES = ['Landsat-8', 'Landsat-7', 'Sentinel-2A, 10m', 'Sentinel-2A, 60m']
     DN_FILE = 'DN_FILE'
     METAFILE = 'METAFILE'
     METHOD = 'METHOD'
@@ -50,27 +48,24 @@ class AtmosphericCorrectionAlgorithm(GeoAlgorithm):
 
     def defineCharacteristics(self):
         # The name that the user will see in the toolbox
-        self.name = 'Atmospheric correction'
+        self.name = 'Sentinel-2 atmospheric correction'
         # The branch of the toolbox under which the algorithm will appear
-        self.group = 'Tools'
+        self.group = 'Sentinel Tools'
 
-        self.addParameter(ParameterSelection(self.SATELLITE, 'Satellite', self.SATELLITES))
         self.addParameter(ParameterRaster(self.DN_FILE, 'DN file', showSublayersDialog=False))
         self.addParameter(ParameterFile(self.METAFILE, 'Metafile', optional=False))
         self.addParameter(ParameterSelection(self.METHOD, 'Method', self.METHODS))
-        self.addOutput(OutputRaster(self.OUTPUT_FILE, 'output file'))
+        self.addOutput(OutputRaster(self.OUTPUT_FILE, 'Output file'))
 
     def processAlgorithm(self, progress):
         """Here is where the processing itself takes place."""
         # The first thing to do is retrieve the values of the parameters
         # entered by the user
 
-        sensorList = ["L8", "L7", "S2A_10m", "S2A_60m"]
         methodList = ["DOS", "TOA", "RAD"]
 
         options = {}
         # input/output parameters
-        options["sensor"] = sensorList[self.getParameterValue(self.SATELLITE)]
         options["dnFile"] = self.getParameterValue(self.DN_FILE)
         options["metadataFile"] = self.getParameterValue(self.METAFILE)
         options["reflectanceFile"] = self.getOutputValue(self.OUTPUT_FILE)

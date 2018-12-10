@@ -25,13 +25,13 @@ def readMetadataS2L1C(metadataFile):
 
     # save to dictionary
     metaDict = {}
-    metaDict.update({'product_name':ProductName,
-                     'product_start':dateTimeStr,
-                     'processing_level':procesLevel,
-                     'spacecraft':spaceCraft,
-                     'orbit_direction':orbitDirection,
-                     'quantification_value':quantificationVal,
-                     'reflection_conversion':reflectConversion,
+    metaDict.update({'product_name': ProductName,
+                     'product_start': dateTimeStr,
+                     'processing_level': procesLevel,
+                     'spacecraft': spaceCraft,
+                     'orbit_direction': orbitDirection,
+                     'quantification_value': quantificationVal,
+                     'reflection_conversion': reflectConversion,
                      'irradiance_values': e0})
     # granule
     XML_mask = 'MTD_TL.xml'
@@ -75,22 +75,22 @@ def readMetadataS2L1C(metadataFile):
             ULY_60 = int(elem[1].text)
 
     # save to dictionary
-    metaDict.update({'sun_zenit':sunZen,
-                     'sun_azimuth':sunAz,
-                     'sensor_zenit':sensorZen,
-                     'sensor_azimuth':sensorAz,
-                     'projection':EPSG,
-                     'cloudCoverPercent':cldCoverPercent,
-                     'rows_10':rows_10,
-                     'cols_10':cols_10,
-                     'rows_20':rows_20,
-                     'cols_20':cols_20,
-                     'rows_60':rows_60,
-                     'cols_60':cols_60,
-                     'ULX_10':ULX_10,
-                     'ULY_10':ULY_10,
-                     'ULX_20':ULX_20,
-                     'ULY_20':ULY_20,
-                     'ULX_60':ULX_60,
-                     'ULY_60':ULY_60,})
+    metaDict.update({'sun_zenit': sunZen,
+                     'sun_azimuth': sunAz,
+                     'sensor_zenit': sensorZen,
+                     'sensor_azimuth': sensorAz,
+                     'projection': EPSG,
+                     'cloudCoverPercent': cldCoverPercent,
+                     'rows_10': rows_10,
+                     'cols_10': cols_10,
+                     'rows_20': rows_20,
+                     'cols_20': cols_20,
+                     'rows_60': rows_60,
+                     'cols_60': cols_60,
+                     'ULX_10': ULX_10,
+                     'ULY_10': ULY_10,
+                     'ULX_20': ULX_20,
+                     'ULY_20': ULY_20,
+                     'ULX_60': ULX_60,
+                     'ULY_60': ULY_60})
     return metaDict
