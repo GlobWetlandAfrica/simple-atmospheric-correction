@@ -100,7 +100,6 @@ def toaRadianceL8(inImg, metadataFile, doDOS, sensor):
                 match = re.search('(([A-Z]{2}\d).+)_B(\d+)\.TIF$', name)
                 if match and int(match.group(3)) in visNirBands:
                     band = int(match.group(3))
-                    print(band)
                     rawImg = gdal.Open(os.path.join(imgDir, name), gdal.GA_ReadOnly)
                     rawData[:, :, band-1] = rawImg.GetRasterBand(1).ReadAsArray()
                     rawData = np.int_(rawData)
@@ -135,11 +134,9 @@ def toaRadianceL8(inImg, metadataFile, doDOS, sensor):
         dosDN = list(np.zeros(rawData.shape[2]))
 
     # apply the radiometric correction factors to input image
-    print("Radiometric correction")
     radiometricData = np.zeros((inImg.RasterYSize, inImg.RasterXSize, rawData.shape[2]))
     validMask = np.zeros((inImg.RasterYSize, inImg.RasterXSize))
     for band in range(1, rawData.shape[2]+1):
-        print(band)
         radiometricData[:, :, band-1] =\
             np.where((rawData[:, :, band-1]-dosDN[band-1]) > 0,
                      (rawData[:, :, band-1]-dosDN[band-1])*multFactor[band-1] + addFactor[band-1],
@@ -167,11 +164,10 @@ def toaRadianceS2(inImg, metadataFile):
     e0 = []
     for e in metadataFile['irradiance_values']:
         e0.append(float(e))
-    z = float(metadataFile[metadataFile['current_granule']]['sun_zenit'])
+    z = float(metadataFile['sun_zenit'])
 
     visNirBands = range(1, 10)
     # Convert to radiance
-    print("Radiometric correction")
     radiometricData = np.zeros((inImg.RasterYSize, inImg.RasterXSize, len(visNirBands)))
     for i in range(len(visNirBands)):
         rToa = (inImg.GetRasterBand(i+1).ReadAsArray().astype(float)) / rc
@@ -184,10 +180,8 @@ def toaRadianceS2(inImg, metadataFile):
 def toaReflectanceS2(inImg, metadataFile):
     rc = float(metadataFile['reflection_conversion'])
     # Convert to TOA reflectance
-    print("TOA reflectance")
     rToa = np.zeros((inImg.RasterYSize, inImg.RasterXSize, inImg.RasterCount))
     for i in range(inImg.RasterCount):
-        print(i)
         rToa[:, :, i] = inImg.GetRasterBand(i+1).ReadAsArray().astype(float) / rc
 
     res = saveImg(rToa, inImg.GetGeoTransform(), inImg.GetProjection(), "MEM")
@@ -195,7 +189,6 @@ def toaReflectanceS2(inImg, metadataFile):
 
 
 def darkObjectSubstraction(inImg):
-    print("DOS correction")
     dosDN = []
     tempData = inImg.GetRasterBand(1).ReadAsArray()
     numElements = np.size(tempData[tempData != 0])
@@ -237,8 +230,6 @@ def saveImg(data, geotransform, proj, outPath, noDataValue=np.nan):
         ds.GetRasterBand(1).WriteArray(data)
         ds.GetRasterBand(1).SetNoDataValue(noDataValue)
 
-    print('Saved ' + outPath)
-
     return ds
 
 
@@ -248,6 +239,5 @@ def saveImgByCopy(outImg, outPath):
     savedImg = driver.CreateCopy(outPath, outImg, 0, driverOptionsGTiff)
     savedImg = None
     outImg = None
-    print('Saved ' + outPath)
 
 ###############################################################################

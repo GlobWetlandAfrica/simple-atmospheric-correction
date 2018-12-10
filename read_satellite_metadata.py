@@ -33,68 +33,64 @@ def readMetadataS2L1C(metadataFile):
                      'quantification_value':quantificationVal,
                      'reflection_conversion':reflectConversion,
                      'irradiance_values': e0})
-    # granules
-    XML_mask = 'S2?_*.xml'
-    for elem in tree.iter(tag='Granules'):
-        granule = elem.attrib['granuleIdentifier']
-        granuleDir = os.path.join(os.path.dirname(metadataFile), "GRANULE",
-                                  granule)
-        globlist = granuleDir + '/' + XML_mask
-        metadataTile = glob.glob(globlist)[0]
-        # read metadata of tile
-        tree = ET.parse(metadataTile)
-        root = tree.getroot()
-        namespace = root.tag.split('}')[0]+'}'
-        # Get sun geometry - use the mean
-        baseNodePath = "./"+namespace+"Geometric_Info/Tile_Angles/"
-        sunGeometryNodeName = baseNodePath+"Mean_Sun_Angle/"
-        sunZen = root.find(sunGeometryNodeName+"ZENITH_ANGLE").text
-        sunAz = root.find(sunGeometryNodeName+"AZIMUTH_ANGLE").text
-        # Get sensor geometry - assume that all bands have the same angles
-        # (they differ slightly)
-        sensorGeometryNodeName = baseNodePath+"Mean_Viewing_Incidence_Angle_List/Mean_Viewing_Incidence_Angle/"
-        sensorZen = root.find(sensorGeometryNodeName+"ZENITH_ANGLE").text
-        sensorAz = root.find(sensorGeometryNodeName+"AZIMUTH_ANGLE").text
-        EPSG = tree.find("./"+namespace+"Geometric_Info/Tile_Geocoding/HORIZONTAL_CS_CODE").text
-        cldCoverPercent = tree.find("./"+namespace+"Quality_Indicators_Info/Image_Content_QI/CLOUDY_PIXEL_PERCENTAGE").text
-        for elem in tree.iter(tag='Size'):
-            if elem.attrib['resolution'] == '10':
-                rows_10 = int(elem[0].text)
-                cols_10 = int(elem[1].text)
-            if elem.attrib['resolution'] == '20':
-                rows_20 = int(elem[0].text)
-                cols_20 = int(elem[1].text)
-            if elem.attrib['resolution'] == '60':
-                rows_60 = int(elem[0].text)
-                cols_60 = int(elem[1].text)
-        for elem in tree.iter(tag='Geoposition'):
-            if elem.attrib['resolution'] == '10':
-                ULX_10 = int(elem[0].text)
-                ULY_10 = int(elem[1].text)
-            if elem.attrib['resolution'] == '20':
-                ULX_20 = int(elem[0].text)
-                ULY_20 = int(elem[1].text)
-            if elem.attrib['resolution'] == '60':
-                ULX_60 = int(elem[0].text)
-                ULY_60 = int(elem[1].text)
+    # granule
+    XML_mask = 'MTD_TL.xml'
+    globlist = os.path.join(os.path.dirname(metadataFile), "GRANULE", "L1C_*", XML_mask)
+    metadataTile = glob.glob(globlist)[0]
+    # read metadata of tile
+    tree = ET.parse(metadataTile)
+    root = tree.getroot()
+    namespace = root.tag.split('}')[0]+'}'
+    # Get sun geometry - use the mean
+    baseNodePath = "./"+namespace+"Geometric_Info/Tile_Angles/"
+    sunGeometryNodeName = baseNodePath+"Mean_Sun_Angle/"
+    sunZen = root.find(sunGeometryNodeName+"ZENITH_ANGLE").text
+    sunAz = root.find(sunGeometryNodeName+"AZIMUTH_ANGLE").text
+    # Get sensor geometry - assume that all bands have the same angles
+    # (they differ slightly)
+    sensorGeometryNodeName = baseNodePath+"Mean_Viewing_Incidence_Angle_List/Mean_Viewing_Incidence_Angle/"
+    sensorZen = root.find(sensorGeometryNodeName+"ZENITH_ANGLE").text
+    sensorAz = root.find(sensorGeometryNodeName+"AZIMUTH_ANGLE").text
+    EPSG = tree.find("./"+namespace+"Geometric_Info/Tile_Geocoding/HORIZONTAL_CS_CODE").text
+    cldCoverPercent = tree.find("./"+namespace+"Quality_Indicators_Info/Image_Content_QI/CLOUDY_PIXEL_PERCENTAGE").text
+    for elem in tree.iter(tag='Size'):
+        if elem.attrib['resolution'] == '10':
+            rows_10 = int(elem[0].text)
+            cols_10 = int(elem[1].text)
+        if elem.attrib['resolution'] == '20':
+            rows_20 = int(elem[0].text)
+            cols_20 = int(elem[1].text)
+        if elem.attrib['resolution'] == '60':
+            rows_60 = int(elem[0].text)
+            cols_60 = int(elem[1].text)
+    for elem in tree.iter(tag='Geoposition'):
+        if elem.attrib['resolution'] == '10':
+            ULX_10 = int(elem[0].text)
+            ULY_10 = int(elem[1].text)
+        if elem.attrib['resolution'] == '20':
+            ULX_20 = int(elem[0].text)
+            ULY_20 = int(elem[1].text)
+        if elem.attrib['resolution'] == '60':
+            ULX_60 = int(elem[0].text)
+            ULY_60 = int(elem[1].text)
 
-        # save to dictionary
-        metaDict.update({granule[len(granule)-13:-7]:{'sun_zenit':sunZen,
-                                  'sun_azimuth':sunAz,
-                                  'sensor_zenit':sensorZen,
-                                  'sensor_azimuth':sensorAz,
-                                  'projection':EPSG,
-                                  'cloudCoverPercent':cldCoverPercent,
-                                  'rows_10':rows_10,
-                                  'cols_10':cols_10,
-                                  'rows_20':rows_20,
-                                  'cols_20':cols_20,
-                                  'rows_60':rows_60,
-                                  'cols_60':cols_60,
-                                  'ULX_10':ULX_10,
-                                  'ULY_10':ULY_10,
-                                  'ULX_20':ULX_20,
-                                  'ULY_20':ULY_20,
-                                  'ULX_60':ULX_60,
-                                  'ULY_60':ULY_60,}})
+    # save to dictionary
+    metaDict.update({'sun_zenit':sunZen,
+                     'sun_azimuth':sunAz,
+                     'sensor_zenit':sensorZen,
+                     'sensor_azimuth':sensorAz,
+                     'projection':EPSG,
+                     'cloudCoverPercent':cldCoverPercent,
+                     'rows_10':rows_10,
+                     'cols_10':cols_10,
+                     'rows_20':rows_20,
+                     'cols_20':cols_20,
+                     'rows_60':rows_60,
+                     'cols_60':cols_60,
+                     'ULX_10':ULX_10,
+                     'ULY_10':ULY_10,
+                     'ULX_20':ULX_20,
+                     'ULY_20':ULY_20,
+                     'ULX_60':ULX_60,
+                     'ULY_60':ULY_60,})
     return metaDict
