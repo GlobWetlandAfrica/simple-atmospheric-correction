@@ -48,7 +48,7 @@ def atmProcessingMain(options):
             radianceImg = None
         # S2 data is provided in L1C meaning in TOA reflectance
         else:
-            reflectanceImg = toaReflectance(inImg, metadataFile, sensor)
+            reflectanceImg = toaReflectance(inImg, metadataFile, sensor, doDOS=doDOS)
             inImg = None
 
     elif atmCorrMethod == "RAD":
@@ -70,11 +70,11 @@ def toaRadiance(inImg, metadataFile, sensor, doDOS):
     return res
 
 
-def toaReflectance(inImg, metadataFile, sensor):
+def toaReflectance(inImg, metadataFile, sensor, doDOS=False):
     if sensor == "L8" or sensor == "L7":
         res = toaReflectanceL8(inImg, metadataFile)
     elif sensor == "S2A_10m" or sensor == "S2A_60m":
-        res = toaReflectanceS2(inImg, metadataFile)
+        res = toaReflectanceS2(inImg, metadataFile, doDOS)
     return res
 
 
@@ -159,8 +159,7 @@ def toaReflectanceL8(inImg, metadataFile):
 # Method taken from the bottom of http://s2tbx.telespazio-vega.de/sen2three/html/r2rusage.html
 # Assumes a L1C product which contains TOA reflectance: https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/product-types
 def toaRadianceS2(inImg, metadataFile):
-    rc = float(metadataFile['reflection_conversion'])
-    u = float(metadataFile['quantification_value'])
+    qv = float(metadataFile['quantification_value'])
     e0 = []
     for e in metadataFile['irradiance_values']:
         e0.append(float(e))
@@ -170,19 +169,29 @@ def toaRadianceS2(inImg, metadataFile):
     # Convert to radiance
     radiometricData = np.zeros((inImg.RasterYSize, inImg.RasterXSize, len(visNirBands)))
     for i in range(len(visNirBands)):
-        rToa = (inImg.GetRasterBand(i+1).ReadAsArray().astype(float)) / rc
-        radiometricData[:, :, i] = (rToa * e0[i] * cos(radians(z))) / (pi * u)
+        rToa = (inImg.GetRasterBand(i+1).ReadAsArray().astype(float)) / qv
+        radiometricData[:, :, i] = (rToa * e0[i] * cos(radians(z))) / pi
     res = saveImg(radiometricData, inImg.GetGeoTransform(), inImg.GetProjection(), "MEM")
     return res
 
 
 # Assumes a L1C product which contains TOA reflectance: https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/product-types
-def toaReflectanceS2(inImg, metadataFile):
-    rc = float(metadataFile['reflection_conversion'])
+def toaReflectanceS2(inImg, metadataFile, doDOS=False):
+    qv = float(metadataFile['quantification_value'])
+
+    # perform dark object substraction
+    if doDOS:
+        dosDN = darkObjectSubstraction(inImg)
+    else:
+        dosDN = list(np.zeros((inImg.RasterYSize, inImg.RasterXSize)))
+
     # Convert to TOA reflectance
     rToa = np.zeros((inImg.RasterYSize, inImg.RasterXSize, inImg.RasterCount))
     for i in range(inImg.RasterCount):
-        rToa[:, :, i] = inImg.GetRasterBand(i+1).ReadAsArray().astype(float) / rc
+        rawData = inImg.GetRasterBand(i+1).ReadAsArray().astype(float)
+        rToa[:, :, i] = np.where((rawData-dosDN[i]) > 0,
+                                 (rawData-dosDN[i]) / qv,
+                                 0)
 
     res = saveImg(rToa, inImg.GetGeoTransform(), inImg.GetProjection(), "MEM")
     return res
@@ -194,7 +203,6 @@ def darkObjectSubstraction(inImg):
     numElements = np.size(tempData[tempData != 0])
     tempData = None
     for band in range(1, inImg.RasterCount+1):
-        # use histogram with 2048 bins since WV2 has 11 bit radiometric resolution
         hist, edges = np.histogram(inImg.GetRasterBand(band).ReadAsArray(), bins=2048,
                                    range=(1, 2048), density=False)
         for i in range(1, len(hist)):
